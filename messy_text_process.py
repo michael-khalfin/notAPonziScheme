@@ -9,6 +9,6 @@ for line in lines:
 in_file.close()
 
 
-out_file = open("new_covariance_matrix.txt", "w")
+out_file = open("new_covariance_matrix.csv", "w")
 out_file.write(out_text)
 out_file.close()
