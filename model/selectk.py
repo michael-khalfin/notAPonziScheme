@@ -34,32 +34,34 @@ def distance_bw_vectors(v1, v2):
 
 def create_clusters(distance_matrix, n, num_groups):
 
-    model = gp.Model("MIP_Model")
-    x = model.addVars(n, num_groups, vtype=GRB.BINARY, name="x")
+    model = gp.Model("IP_Model")
+    y = model.addVars(n, vtype=GRB.BINARY, name="y")
+    x = model.addVars(n, n, vtype=GRB.BINARY, name="x")
 
     obj_expr = gp.LinExpr()
-    for i in range(n):
-        for j in range(n):
-            for k in range(6):
-                obj_expr += x[i, k] * x[j, k] * distance_matrix[i][j]
+    for j in range(n):
+        for i in range(n):
+            obj_expr += distance_matrix[i][j] * x[i,j]
 
     model.setObjective(obj_expr, GRB.MINIMIZE)
 
-    # Each element is assigned to exactly one cluster
-    for i in range(n):
-        model.addConstr(gp.quicksum(x[i, k] for k in range(6)) == 1)
+    # Choose num_groups centroids
+    model.addConstr(gp.quicksum(y[j] for j in range(n)) == num_groups)
 
-    # Add constraints: Each cluster has exactly n/6 elements
-    for k in range(6):
-        model.addConstr(gp.quicksum(x[i, k] for i in range(n)) == n // 6)
+    for i in range(n):
+        model.addConstr(gp.quicksum(x[i, j] for j in range(n)) == 1)
+    for i in range(n):
+        for j in range(n):
+            model.addConstr(x[i, j] <= y[j])
 
     model.optimize()
 
     if model.status == GRB.OPTIMAL:
-        assignment = {(i, k): x[i, k].x for i in range(n) for k in range(6) if x[i, k].x > 0.5}
-        print("Element assignments to clusters:")
-        for i, k in assignment:
-            print(f"Element {i} is assigned to cluster {k}")
+        print([(i,j) for i in range(n) for j in range(n) if x[i,j].x > 0.5])
+        #assignment = {(i, k): x[i, k].x for i in range(n) for k in range(6) if x[i, k].x > 0.5}
+        #print("Element assignments to clusters:")
+        #for i, k in assignment:
+        #    print(f"Element {i} is assigned to cluster {k}")
     else:
         print("No feasible solution found.")
 
@@ -85,4 +87,4 @@ if __name__ == '__main__':
     num_groups = 5
 
     env = gp.Env()
-    #clusters = create_clusters(distance_matrix, n, num_groups)
+    create_clusters(distance_matrix, n, num_groups)
