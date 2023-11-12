@@ -1,5 +1,5 @@
 import os
-os.environ["GUROBI_LICENSE_KEY"] = "gurobi.lic"
+os.environ["GUROBI_LICENSE_KEY"] = "/Users/michael_khalfin/gurobi.lic"
 
 import pandas as pd
 import numpy as np
@@ -23,21 +23,7 @@ def distance_bw_vectors(v1, v2):
     dist = dist**(1/2)
     return dist
 
-if __name__ == '__main__':
-    covariance_matrix = pd.read_csv("data/prob_correct_covariance_matrix.csv", header=None, encoding='utf-8')
-    covariance_matrix = covariance_matrix.iloc[1:, 1:]
-    covariance_matrix = covariance_matrix.astype(float)
-    covariance_matrix = covariance_matrix.to_numpy()
-
-    # Convert covariance matrix to correlation matrix
-    std_devs = np.sqrt(np.diag(covariance_matrix))
-    correlation_matrix = covariance_matrix / np.outer(std_devs, std_devs)
-
-    distance_matrix = make_dist_array(correlation_matrix)
-    n = distance_matrix.shape[0]
-    num_groups = 6
-
-    env = gp.Env()
+def create_clusters(distance_matrix, n, num_groups):
 
     model = gp.Model("MIP_Model")
     x = model.addVars(n, num_groups, vtype=GRB.BINARY, name="x")
@@ -67,3 +53,22 @@ if __name__ == '__main__':
             print(f"Element {i} is assigned to cluster {k}")
     else:
         print("No feasible solution found.")
+
+if __name__ == '__main__':
+    covariance_matrix = pd.read_csv("data/prob_correct_covariance_matrix.csv", header=None, encoding='utf-8')
+    covariance_matrix = covariance_matrix.iloc[1:, 1:]
+    covariance_matrix = covariance_matrix.astype(float)
+    covariance_matrix = covariance_matrix.to_numpy()
+
+    # Convert covariance matrix to correlation matrix
+    std_devs = np.sqrt(np.diag(covariance_matrix))
+    correlation_matrix = covariance_matrix / np.outer(std_devs, std_devs)
+    print(correlation_matrix)
+    print(correlation_matrix.shape)
+
+    distance_matrix = make_dist_array(correlation_matrix)
+    n = distance_matrix.shape[0]
+    num_groups = 5
+
+    env = gp.Env()
+    #clusters = create_clusters(distance_matrix, n, num_groups)
