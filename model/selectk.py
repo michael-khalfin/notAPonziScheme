@@ -8,6 +8,17 @@ from gurobipy import GRB
 import os
 
 def get_k_largest(capitalizations, k):
+    """
+    Get the indices and corresponding elements of the k largest values in an array.
+
+    Parameters:
+    - capitalizations (numpy.ndarray): The array containing capitalization values.
+    - k (int): The number of largest values to retrieve.
+
+    Returns:
+    - Tuple[numpy.ndarray, numpy.ndarray]: A tuple containing the indices and corresponding elements
+      of the k largest values.
+    """
     largest_elems = sorted(capitalizations, reverse=False)[:30]
     indices = []
     for elem in largest_elems:
@@ -17,7 +28,15 @@ def get_k_largest(capitalizations, k):
     return indices, largest_elems
 
 def make_dist_array(correlation_matrix):
-    # Transform correlation matrix to distances
+    """
+    Transform a correlation matrix to a distance matrix.
+
+    Parameters:
+    - correlation_matrix (numpy.ndarray): The input correlation matrix.
+
+    Returns:
+    - numpy.ndarray: The resulting distance matrix.
+    """
     distance_matrix = np.zeros_like(correlation_matrix)
     for i in range(correlation_matrix.shape[0]):
         for j in range(correlation_matrix.shape[1]):
@@ -25,6 +44,16 @@ def make_dist_array(correlation_matrix):
     return distance_matrix
 
 def distance_bw_vectors(v1, v2):
+    """
+    Compute the distance between two vectors.
+
+    Parameters:
+    - v1 (numpy.ndarray): The first vector.
+    - v2 (numpy.ndarray): The second vector.
+
+    Returns:
+    - float: The Euclidean distance between the two vectors.
+    """
     dist = 0
     for x in v1:
         for y in v2:
@@ -33,6 +62,17 @@ def distance_bw_vectors(v1, v2):
     return dist
 
 def create_clusters(distance_matrix, n, num_groups):
+    """
+    Create clusters using an integer programming model.
+
+    Parameters:
+    - distance_matrix (numpy.ndarray): The distance matrix.
+    - n (int): The number of elements.
+    - num_groups (int): The desired number of clusters.
+
+    Returns:
+    - List[List[int]]: A list of clusters, where each cluster is represented by a list of indices.
+    """
     model = gp.Model("IP_Model")
 
     # Initializes binary variables
@@ -72,15 +112,10 @@ def create_clusters(distance_matrix, n, num_groups):
             cluster = [i for i in range(n) for j in range(n) if (x[i,j].x > 0.5 and j==point)]
             clusters.append(cluster)
 
-        #print([(i,j) for i in range(n) for j in range(n) if x[i,j].x > 0.5])
-        #print([j for j in range(n) if y[j].x > 0.5])
         return clusters
-        #assignment = {(i, k): x[i, k].x for i in range(n) for k in range(6) if x[i, k].x > 0.5}
-        #print("Element assignments to clusters:")
-        #for i, k in assignment:
-        #    print(f"Element {i} is assigned to cluster {k}")
     else:
         print("No feasible solution found.")
+        return []
 
 if __name__ == '__main__':
     period = 0
@@ -105,4 +140,11 @@ if __name__ == '__main__':
 
     env = gp.Env()
     clusters = create_clusters(distance_matrix, n, num_groups)
-    print(clusters)
+
+    kstocks = []
+    for cluster in clusters:
+        caps = []
+        caps = [largest_elems[i] for i in cluster]
+        i = np.where(largest_elems == max(caps))
+        kstocks.append(i[0][0])
+    print(kstocks)
