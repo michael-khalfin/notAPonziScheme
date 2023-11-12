@@ -33,11 +33,13 @@ def distance_bw_vectors(v1, v2):
     return dist
 
 def create_clusters(distance_matrix, n, num_groups):
-
     model = gp.Model("IP_Model")
+
+    # Initializes binary variables
     y = model.addVars(n, vtype=GRB.BINARY, name="y")
     x = model.addVars(n, n, vtype=GRB.BINARY, name="x")
 
+    # Minimize the distance within the clusters
     obj_expr = gp.LinExpr()
     for j in range(n):
         for i in range(n):
@@ -48,16 +50,31 @@ def create_clusters(distance_matrix, n, num_groups):
     # Choose num_groups centroids
     model.addConstr(gp.quicksum(y[j] for j in range(n)) == num_groups)
 
+    # Each object must be represented by one centroid
     for i in range(n):
         model.addConstr(gp.quicksum(x[i, j] for j in range(n)) == 1)
+
+    # i is represented by j only if j is a centroid
     for i in range(n):
         for j in range(n):
             model.addConstr(x[i, j] <= y[j])
 
+    # Each centroid has n/num_groups elements associated with it
+    for j in range(n):
+        model.addConstr(gp.quicksum(x[i, j] for i in range(n)) <= n/num_groups)
+
     model.optimize()
 
     if model.status == GRB.OPTIMAL:
-        print([(i,j) for i in range(n) for j in range(n) if x[i,j].x > 0.5])
+        cluster_points = [j for j in range(n) if y[j].x > 0.5]
+        clusters = []
+        for point in cluster_points:
+            cluster = [i for i in range(n) for j in range(n) if (x[i,j].x > 0.5 and j==point)]
+            clusters.append(cluster)
+
+        #print([(i,j) for i in range(n) for j in range(n) if x[i,j].x > 0.5])
+        #print([j for j in range(n) if y[j].x > 0.5])
+        return clusters
         #assignment = {(i, k): x[i, k].x for i in range(n) for k in range(6) if x[i, k].x > 0.5}
         #print("Element assignments to clusters:")
         #for i, k in assignment:
@@ -87,4 +104,5 @@ if __name__ == '__main__':
     num_groups = 5
 
     env = gp.Env()
-    create_clusters(distance_matrix, n, num_groups)
+    clusters = create_clusters(distance_matrix, n, num_groups)
+    print(clusters)
