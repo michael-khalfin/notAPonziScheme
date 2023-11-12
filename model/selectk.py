@@ -7,6 +7,15 @@ import gurobipy as gp
 from gurobipy import GRB
 import os
 
+def get_k_largest(capitalizations, k):
+    largest_elems = sorted(capitalizations, reverse=False)[:30]
+    indices = []
+    for elem in largest_elems:
+        i = np.where(capitalizations == elem)
+        indices.append(i[0][0])
+    indices = sorted(indices, reverse=False)
+    return indices, largest_elems
+
 def make_dist_array(correlation_matrix):
     # Transform correlation matrix to distances
     distance_matrix = np.zeros_like(correlation_matrix)
@@ -55,16 +64,21 @@ def create_clusters(distance_matrix, n, num_groups):
         print("No feasible solution found.")
 
 if __name__ == '__main__':
+    period = 0
+
+    capitalizations = pd.read_csv("data/capitalizations.csv")
+    largest_indices, largest_elems = get_k_largest(capitalizations[str(period)].to_numpy(), 30)
+
     covariance_matrix = pd.read_csv("data/prob_correct_covariance_matrix.csv", header=None, encoding='utf-8')
     covariance_matrix = covariance_matrix.iloc[1:, 1:]
     covariance_matrix = covariance_matrix.astype(float)
     covariance_matrix = covariance_matrix.to_numpy()
+    covariance_matrix = covariance_matrix[largest_indices]
+    covariance_matrix = covariance_matrix[:, largest_indices]
 
     # Convert covariance matrix to correlation matrix
     std_devs = np.sqrt(np.diag(covariance_matrix))
     correlation_matrix = covariance_matrix / np.outer(std_devs, std_devs)
-    print(correlation_matrix)
-    print(correlation_matrix.shape)
 
     distance_matrix = make_dist_array(correlation_matrix)
     n = distance_matrix.shape[0]
