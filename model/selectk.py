@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
-import os
 
 def get_k_largest(capitalizations, k):
     """
