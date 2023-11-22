@@ -29,9 +29,6 @@ class index:
 
     def __init__(self, period = 0, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
         self.period = period
-        self.distance_metric = distance_metric
-        self.selection_metric = selection_metric
-        self.weight_metric = weight_metric
 
         self.capitalizations = pd.read_csv("data/capitalizations.csv")
         self.largest_indices, self.largest_elems = self.get_k_largest(self.capitalizations[str(self.period)].to_numpy(), 30)
@@ -45,7 +42,7 @@ class index:
         self.env = gp.Env()
         self.clusters = self.create_clusters(self.distance_matrix, n, num_groups)
 
-        self.stocks = self.select_stocks()
+        self.stocks = self.select_stocks(selection_metric = selection_metric)
 
     def get_k_largest(self, capitalizations, k):
         """
