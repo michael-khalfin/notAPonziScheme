@@ -117,12 +117,12 @@ def create_clusters(distance_matrix, n, num_groups):
         return []
 
 if __name__ == '__main__':
-    period = 0
+    period = 70
 
-    capitalizations = pd.read_csv("data/capitalizations.csv")
+    capitalizations = pd.read_csv("data/capitalizations_all_periods.csv")
     largest_indices, largest_elems = get_k_largest(capitalizations[str(period)].to_numpy(), 30)
 
-    covariance_matrix = pd.read_csv("data/prob_correct_covariance_matrix.csv", header=None, encoding='utf-8')
+    covariance_matrix = pd.read_csv("data/covariance_matrix_71.csv", header=None, encoding='utf-8')
     covariance_matrix = covariance_matrix.iloc[1:, 1:]
     covariance_matrix = covariance_matrix.astype(float)
     covariance_matrix = covariance_matrix.to_numpy()
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     distance_matrix = make_dist_array(correlation_matrix)
     n = distance_matrix.shape[0]
-    num_groups = 5
+    num_groups = 6
 
     env = gp.Env()
     clusters = create_clusters(distance_matrix, n, num_groups)

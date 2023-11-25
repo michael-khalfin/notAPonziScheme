@@ -19,6 +19,7 @@ class index:
         - 1: ...
 
     - num_groups (int): The desired number of clusters.
+        - Defualt: 5
 
     - selection_metric (int): The metric used for stock selection.
         - 0: Capitalization.
@@ -27,7 +28,7 @@ class index:
         - 0: Capitalization.
     """
 
-    def __init__(self, period = 0, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
+    def __init__(self, period = 59, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
         self.period = period
 
         self.capitalizations = pd.read_csv("data/capitalizations.csv")
@@ -43,6 +44,7 @@ class index:
         self.clusters = self.create_clusters(self.distance_matrix, n, num_groups)
 
         self.stocks = self.select_stocks(selection_metric = selection_metric)
+        self.value = self.determine_value(weight_metric = weight_metric)
 
     def get_k_largest(self, capitalizations, k):
         """
@@ -71,7 +73,7 @@ class index:
         Returns:
         - numpy.ndarray: The covariance matrix.
         """
-        covariance_matrix = pd.read_csv(f"data/covariance_matrix{self.period+60}.csv", header=None, encoding='utf-8')
+        covariance_matrix = pd.read_csv(f"data/covariance_matrix{self.period+1}.csv", header=None, encoding='utf-8')
         covariance_matrix = self.covariance_matrix.astype(float)
         covariance_matrix = self.covariance_matrix.to_numpy()
         covariance_matrix = self.covariance_matrix[self.largest_indices]
@@ -197,3 +199,30 @@ class index:
                 i = np.where(self.largest_elems == max(caps))
                 kstocks.append(i[0][0])
         return kstocks
+    
+    def determine_value(self, weight_metric):
+        """
+        Calculates the value of the index for a given weight metric.
+
+        Parameters:
+        - weight_metric (int): The metric used to calculate the value.
+
+        Returns:
+        - float: The value of the index for the given weight metric.
+        """
+        value = 0
+
+        if weight_metric == 0:
+            total = 0
+            for i in self.stocks:
+                total += self.largest_elems[i]
+            
+            for i in self.stocks:
+                value += ((self.largest_elems[i] / total) * self.largest_elems[i])
+
+        if weight_metric == 1:
+            amt = len(self.stocks)
+            for i in self.stocks:
+                value += ((1 / amt) * self.largest_elems[i])
+
+        return value
