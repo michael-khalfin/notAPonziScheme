@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+import math
 
 class index:
     """
@@ -31,11 +32,11 @@ class index:
     def __init__(self, period = 59, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
         self.period = period
 
-        self.capitalizations = pd.read_csv("data/capitalizations.csv")
+        self.capitalizations = pd.read_csv("data/capitalizations_all_periods.csv")
         self.largest_indices, self.largest_elems = self.get_k_largest(self.capitalizations[str(self.period)].to_numpy(), 30)
         self.covariance_matrix = self.get_covariance_matrix()
         self.correlation_matrix = self.make_correlation_matrix()
-        self.distance_matrix = self.make_dist_array(distance_metric = distance_metric)
+        self.distance_matrix = self.make_dist_array(self.correlation_matrix, distance_metric = distance_metric)
         
         n = self.distance_matrix.shape[0]
         self.num_groups = num_groups
@@ -73,11 +74,11 @@ class index:
         Returns:
         - numpy.ndarray: The covariance matrix.
         """
-        covariance_matrix = pd.read_csv(f"data/covariance_matrix{self.period+1}.csv", header=None, encoding='utf-8')
-        covariance_matrix = self.covariance_matrix.astype(float)
-        covariance_matrix = self.covariance_matrix.to_numpy()
-        covariance_matrix = self.covariance_matrix[self.largest_indices]
-        covariance_matrix = self.covariance_matrix[:, self.largest_indices]
+        covariance_matrix = pd.read_csv(f"data/covariance_matrices/covariance_matrix_{self.period+1}.csv", header=None, encoding='utf-8')
+        covariance_matrix = covariance_matrix.astype(float)
+        covariance_matrix = covariance_matrix.to_numpy()
+        covariance_matrix = covariance_matrix[self.largest_indices]
+        covariance_matrix = covariance_matrix[:, self.largest_indices]
         return covariance_matrix
 
     def make_correlation_matrix(self):
@@ -101,31 +102,43 @@ class index:
         - numpy.ndarray: The resulting distance matrix.
         """
         distance_matrix = np.zeros_like(correlation_matrix)
-        if distance_metric == 0:
-            for i in range(correlation_matrix.shape[0]):
-                for j in range(correlation_matrix.shape[1]):
-                    distance_matrix[i, j] = self.distance_bw_vectors(correlation_matrix[i], correlation_matrix[j])
+        for i in range(correlation_matrix.shape[0]):
+            for j in range(correlation_matrix.shape[1]):
+                distance_matrix[i, j] = self.distance_bw_vectors(correlation_matrix[i], correlation_matrix[j], distance_metric)
         return distance_matrix
     
-    def distance_bw_vectors(self, v1, v2):
+    def distance_bw_vectors(self, v1, v2, distance_metric):
         """
         Compute the distance between two vectors.
 
         Parameters:
         - v1 (numpy.ndarray): The first vector.
         - v2 (numpy.ndarray): The second vector.
+        - distance_metric: An integer denoting how the vectors similarity is computed
 
         Returns:
-        - float: The Euclidean distance between the two vectors.
+        - float: The distance between the two vectors.
         """
         dist = 0
-        for x in v1:
-            for y in v2:
-                dist += (x-y) ** 2
-        dist = dist**(1/2)
+        if distance_metric == 0:
+            for i in range(len(v1)):
+                dist += (v1[i]-v2[i]) ** 2
+            dist = dist**(1/2)
+        elif distance_metric == 1:
+            for i in range(len(v1)):
+                dist += math.abs(v1[i]-v2[i])
+        else:
+            dot_product = 0
+            x_norm = 0 
+            y_norm = 0
+            for i in range(len(v1)):
+                x_norm += v1[i] ** 2
+                y_norm += v2[i] ** 2
+                dot_product += v1[i] * v2[i]
+            dist = dot_product / (math.sqrt(x_norm) * math.sqrt(x_norm))
         return dist
     
-    def create_clusters(distance_matrix, n, num_groups):
+    def create_clusters(self, distance_matrix, n, num_groups):
         """
         Create clusters using an integer programming model.
 
@@ -198,6 +211,9 @@ class index:
                 caps = [self.largest_elems[i] for i in cluster]
                 i = np.where(self.largest_elems == max(caps))
                 kstocks.append(i[0][0])
+        elif selection_metric == 1:
+            for cluster in self.clusters:
+                pass
         return kstocks
     
     def determine_value(self, weight_metric):
@@ -226,3 +242,5 @@ class index:
                 value += ((1 / amt) * self.largest_elems[i])
 
         return value
+    
+x = index()
