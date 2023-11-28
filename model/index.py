@@ -35,6 +35,7 @@ class index:
         self.capitalizations = pd.read_csv("data/capitalizations_all_periods.csv")
         self.largest_indices, self.largest_elems = self.get_k_largest(self.capitalizations[str(self.period)].to_numpy(), 30)
         self.covariance_matrix = self.get_covariance_matrix()
+        self.expected_returns = self.get_expected_returns()
         self.correlation_matrix = self.make_correlation_matrix()
         self.distance_matrix = self.make_dist_array(self.correlation_matrix, distance_metric = distance_metric)
         
@@ -45,7 +46,9 @@ class index:
         self.clusters = self.create_clusters(self.distance_matrix, n, num_groups)
 
         self.stocks = self.select_stocks(selection_metric = selection_metric)
-        self.weights = self.compute_weights(weight_metric = weight_metric)
+        self.index_weights = self.compute_weights(weight_metric = weight_metric)
+        self.value_weights = self.compute_benchmark_weights_value()
+        self.uniform_weights = self.compute_benchmark_weights_uniform()
         self.value = self.determine_value()
 
     def get_k_largest(self, capitalizations, k):
@@ -68,6 +71,18 @@ class index:
         indices = sorted(indices, reverse=False)
         return indices, largest_elems
     
+    def get_expected_returns(self):
+        """
+        Retrieve and process the expected returns based on the selected period.
+
+        Returns:
+        - numpy.ndarray: The expected returns 
+        """
+        expected_returns = pd.read_csv(f"data/expected_returns/expected_return_{self.period+1}.csv", header=None, encoding='utf-8')
+        expected_returns = expected_returns.astype(float)
+        expected_returns = expected_returns.to_numpy()
+        return expected_returns[self.largest_indices]
+
     def get_covariance_matrix(self):
         """
         Retrieve and process the covariance matrix based on the selected period.
@@ -235,8 +250,10 @@ class index:
         - weight_metric (int): The metric used to calculate the value.
 
         Returns:
-        - float: The portfolio weights for our representative stock
+        - List[float]: The portfolio weights for our representative stocks
+        - numpy.ndarray: The portfolio weights for the benchmark
         """
+        # Use the expected returns for the predictions, not the capitalizations
         if weight_metric == 0:
             cluster_weights = []
             total = 0
@@ -256,10 +273,9 @@ class index:
         Calculates the value of the index for a given weight metric.
 
         Parameters:
-        - weight_metric (int): The metric used to calculate the value.
 
         Returns:
-        - float: The value of the index for the given weight metric.
+        - float: The value of the index.
         """
         value = 0
         count = 0
@@ -268,7 +284,45 @@ class index:
             count += 1
         return value
     
+    def compute_benchmark_weights_value(self):
+        """
+        Calculate the value benchmark portfolio weights 
+
+        Parameters:
+
+        Returns:
+        - numpy.ndarray: The portfolio weights for the value weighted benchmark
+        """
+        benchmark_weights = (1 / (np.transpose(np.ones(30)) @ np.linalg.inv(self.covariance_matrix) @ self.expected_returns)) * np.linalg.inv(self.covariance_matrix) @ self.expected_returns
+        return benchmark_weights
+
+    def compute_benchmark_weights_uniform(self):
+        """
+        Calculate the uniform benchmark portfolio weights 
+
+        Parameters:
+
+        Returns:
+        -numpy.ndarry: The portfolio weights for the uniform weighted benchmark
+        """
+        return np.array([(1 / 30) for i in range(30)])
+
+    def compute_beta(self):
+        """
+        Calculates the betas relative to the benchmarks
+
+        Parameters:
+
+        Returns:
+        - numpy.ndarray: beta relative to our uniform benchmark
+        - numpy.ndarray: beta relative to our value benchmark
+        - numpy.ndarray: beta for our 
+        """
+        value_beta = (self.covariance_matrix @ self.value_weights) / (self.value_weights @ self.covariance_matrix @ self.value_weights)
+        uniform_beta = (self.covariance_matrix @ self.uniform_weights) / (self.uniform_weights @ self.covariance_matrix @ self.uniform_weights)
+        return uniform_beta, value_beta
     
+
 
 
 x = index()
