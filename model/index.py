@@ -45,7 +45,8 @@ class index:
         self.clusters = self.create_clusters(self.distance_matrix, n, num_groups)
 
         self.stocks = self.select_stocks(selection_metric = selection_metric)
-        self.value = self.determine_value(weight_metric = weight_metric)
+        self.weights = self.compute_weights(weight_metric = weight_metric)
+        self.value = self.determine_value()
 
     def get_k_largest(self, capitalizations, k):
         """
@@ -59,7 +60,7 @@ class index:
         - Tuple[numpy.ndarray, numpy.ndarray]: A tuple containing the indices and corresponding elements
         of the k largest values.
         """
-        largest_elems = sorted(capitalizations, reverse=False)[:30]
+        largest_elems = sorted(capitalizations, reverse=False)[:k]
         indices = []
         for elem in largest_elems:
             i = np.where(capitalizations == elem)
@@ -213,10 +214,44 @@ class index:
                 kstocks.append(i[0][0])
         elif selection_metric == 1:
             for cluster in self.clusters:
-                pass
+                caps = []
+                caps = [self.largest_elems[i] for i in cluster]
+                i = np.where(self.largest_elems == min(caps))
+                kstocks.append(i[0][0])
+        else:
+            for cluster in self.clusters:
+                caps = []
+                caps = [self.largest_elems[i] for i in cluster]
+                caps = np.sort(caps)
+                i = np.where(self.largest_elems == caps[self.num_groups / 2])
+                kstocks.append(i[0][0])
         return kstocks
     
-    def determine_value(self, weight_metric):
+    def compute_weights(self, weight_metric):
+        """
+        Calculates the portfolio weights of the representative stocks dependent on the portfolio we are tracking
+
+        Parameters:
+        - weight_metric (int): The metric used to calculate the value.
+
+        Returns:
+        - float: The portfolio weights for our representative stock
+        """
+        if weight_metric == 0:
+            cluster_weights = []
+            total = 0
+            for stock in self.largest_elems:
+                total += stock
+            for cluster in self.clusters:
+                cluster_total = 0
+                for i in cluster:
+                    cluster_total += self.largest_elems[i]
+                cluster_weights.append(cluster_total / total)
+        if weight_metric == 1:
+            cluster_weights = [len(self.clusters[i]) / len(30) for i in range(len(self.clusters))]
+        return cluster_weights
+    
+    def determine_value(self):
         """
         Calculates the value of the index for a given weight metric.
 
@@ -227,20 +262,14 @@ class index:
         - float: The value of the index for the given weight metric.
         """
         value = 0
-
-        if weight_metric == 0:
-            total = 0
-            for i in self.stocks:
-                total += self.largest_elems[i]
-            
-            for i in self.stocks:
-                value += ((self.largest_elems[i] / total) * self.largest_elems[i])
-
-        if weight_metric == 1:
-            amt = len(self.stocks)
-            for i in self.stocks:
-                value += ((1 / amt) * self.largest_elems[i])
-
+        count = 0
+        for i in self.stocks:
+            value += self.largest_elems[i] * self.weights[count]
+            count += 1
         return value
     
+    
+
+
 x = index()
+print(x.value)
