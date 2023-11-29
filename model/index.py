@@ -46,10 +46,13 @@ class index:
         self.clusters = self.create_clusters(self.distance_matrix, n, num_groups)
 
         self.stocks = self.select_stocks(selection_metric = selection_metric)
+        self.small_covariance = self.index_covariance()
         self.index_weights = self.compute_weights(weight_metric = weight_metric)
         self.value_weights = self.compute_benchmark_weights_value()
         self.uniform_weights = self.compute_benchmark_weights_uniform()
-        self.value = self.determine_value()
+        self.uniform_beta, self.value_beta, self.index_beta = self.compute_beta()
+        self.uniform_value, self.weighted_value, self.index_value = self.determine_value()
+        self.uniform_volatility, self.weighted_volatility, self.index_volatility = self.get_volatility()
 
     def get_k_largest(self, capitalizations, k):
         """
@@ -242,6 +245,20 @@ class index:
                 kstocks.append(i[0][0])
         return kstocks
     
+    def index_covariance(self):
+        """
+        Method that removes the unselected stocks from the index's covariance matrix
+
+        Parameters:
+
+        Returns:
+        - numpy.ndarray: The covariance matrix with k rows and columns
+        """
+        covariance_matrix = self.covariance_matrix
+        covariance_matrix = covariance_matrix[self.stocks]
+        covariance_matrix = covariance_matrix[:, self.stocks]
+        return covariance_matrix
+    
     def compute_weights(self, weight_metric):
         """
         Calculates the portfolio weights of the representative stocks dependent on the portfolio we are tracking
@@ -257,32 +274,17 @@ class index:
         if weight_metric == 0:
             cluster_weights = []
             total = 0
-            for stock in self.largest_elems:
+            for stock in self.expected_returns:
                 total += stock
             for cluster in self.clusters:
                 cluster_total = 0
                 for i in cluster:
-                    cluster_total += self.largest_elems[i]
+                    cluster_total += self.expected_returns[i]
                 cluster_weights.append(cluster_total / total)
         if weight_metric == 1:
             cluster_weights = [len(self.clusters[i]) / len(30) for i in range(len(self.clusters))]
         return cluster_weights
     
-    def determine_value(self):
-        """
-        Calculates the value of the index for a given weight metric.
-
-        Parameters:
-
-        Returns:
-        - float: The value of the index.
-        """
-        value = 0
-        count = 0
-        for i in self.stocks:
-            value += self.largest_elems[i] * self.weights[count]
-            count += 1
-        return value
     
     def compute_benchmark_weights_value(self):
         """
@@ -306,6 +308,34 @@ class index:
         -numpy.ndarry: The portfolio weights for the uniform weighted benchmark
         """
         return np.array([(1 / 30) for i in range(30)])
+    
+    def determine_value(self):
+        """
+        Calculates the value of the index for a given weight metric.
+
+        Parameters:
+
+        Returns:
+        - float: The value of the uniform benchmark.
+        - float: The value of the weighted benchmark.
+        - float: The value of the index
+        """
+        index_value = 0
+        uniform_value = 0
+        weighted_value = 0
+        i = 0
+        for weight in self.uniform_weights:
+            uniform_value += weight * self.largest_elems[i]
+            i += 1
+        i = 0
+        for weight in self.value_weights:
+            weighted_value += weight * self.largest_elems[i]
+            i += 1
+        i = 0
+        for stock in self.stocks:
+            index_value += self.index_weights[i] * self.largest_elems[stock]
+            i += 1
+        return uniform_value, weighted_value, index_value
 
     def compute_beta(self):
         """
@@ -316,14 +346,32 @@ class index:
         Returns:
         - numpy.ndarray: beta relative to our uniform benchmark
         - numpy.ndarray: beta relative to our value benchmark
-        - numpy.ndarray: beta for our 
+        - numpy.ndarray: beta for our index
         """
-        value_beta = (self.covariance_matrix @ self.value_weights) / (self.value_weights @ self.covariance_matrix @ self.value_weights)
-        uniform_beta = (self.covariance_matrix @ self.uniform_weights) / (self.uniform_weights @ self.covariance_matrix @ self.uniform_weights)
-        return uniform_beta, value_beta
-    
+        value_beta = (self.covariance_matrix @ self.value_weights) / (np.transpose(self.value_weights) @ self.covariance_matrix @ self.value_weights)
+        uniform_beta = (self.covariance_matrix @ self.uniform_weights) / (np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights)
+        # I'm not sure about how we should get the betas when we only have the 5 stocks
+        index_beta = (self.small_covariance @ self.index_weights) / (np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights)
+        return uniform_beta, value_beta, index_beta
+ 
+    def get_volatility(self):
+        """
+        Calculate the expected volatility of each portfolio
+
+        Parameters:
+
+        Returns:
+        - numpy.ndarray: volatility for the uniform benchmark
+        - numpy.ndarray: volatility for the weighted benchmark
+        - numpy.ndarray: volatility for the index
+        """
+        value_volatility = np.transpose(self.value_weights) @ self.covariance_matrix @ self.value_weights
+        uniform_volatility =  (np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights)
+        # Again, I'm not sure how we want to do this with the index
+        index_volatility = (np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights)
+        return uniform_volatility, value_volatility, index_volatility
+
 
 
 
 x = index()
-print(x.value)
