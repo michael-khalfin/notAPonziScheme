@@ -94,7 +94,7 @@ class index:
         Returns:
         - numpy.ndarray: The covariance matrix.
         """
-        covariance_matrix = pd.read_csv(f"data/covariance_matrices/covariance_matrix_{self.period+1}.csv", header=None, encoding='utf-8')
+        covariance_matrix = pd.read_csv(f"data/covariance_matrices/60_periods/covariance_matrix_{self.period+1}_1.csv", header=None, encoding='utf-8')
         covariance_matrix = covariance_matrix.astype(float)
         covariance_matrix = covariance_matrix.to_numpy()
         covariance_matrix = covariance_matrix[self.largest_indices]
@@ -171,6 +171,7 @@ class index:
         - List[List[int]]: A list of clusters, where each cluster is represented by a list of indices.
         """
         model = gp.Model("IP_Model")
+        model.setParam("LogToConsole", 0)
 
         # Initializes binary variables
         y = model.addVars(n, vtype=GRB.BINARY, name="y")
@@ -282,8 +283,10 @@ class index:
                 for i in cluster:
                     cluster_total += self.expected_returns[i]
                 cluster_weights.append(cluster_total / total)
+            cluster_weights = np.array(cluster_weights)
         if weight_metric == 1:
             cluster_weights = [len(self.clusters[i]) / 30 for i in range(len(self.clusters))]
+            cluster_weights = np.reshape(np.array(cluster_weights), (self.num_groups, 1))
         return cluster_weights
     
     
@@ -308,7 +311,7 @@ class index:
         Returns:
         -numpy.ndarry: The portfolio weights for the uniform weighted benchmark
         """
-        return np.array([(1 / 30) for i in range(30)])
+        return np.reshape(np.array([(1 / 30) for i in range(30)]), (30, 1))
     
     def determine_value(self):
         """
@@ -367,9 +370,9 @@ class index:
         - numpy.ndarray: volatility for the index
         """
         value_volatility = np.transpose(self.value_weights) @ self.covariance_matrix @ self.value_weights
-        uniform_volatility =  (np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights)
+        uniform_volatility =  np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights
         # Again, I'm not sure how we want to do this with the index
-        index_volatility = (np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights)
+        index_volatility = np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights
         return uniform_volatility, value_volatility, index_volatility
 
 

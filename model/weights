@@ -9,9 +9,9 @@ if __name__ == '__main__':
         for j in range(3): 
             for k in range(2):
                 testCase = indexClass.index(period = 59, distance_metric = i, num_groups = 5, selection_metric = j, weight_metric = k)
-                betas.append(testCase.compute_beta())
-                values.append(testCase.determine_value())
-                volatilities.append(testCase.get_volatility())
+                betas.append(testCase.compute_beta()[2])
+                values.append(testCase.determine_value()[2])
+                volatilities.append(testCase.get_volatility()[2])
     print(betas)
     print(values)
     print(volatilities)
