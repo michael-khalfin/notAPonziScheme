@@ -1,7 +1,7 @@
 import indexClass
 
 
-if __name__ == '__main__':
+def first_period():
     betas = []
     values = []
     volatilities = []
@@ -12,7 +12,13 @@ if __name__ == '__main__':
                 betas.append(testCase.compute_beta()[2])
                 values.append(testCase.determine_value()[2])
                 volatilities.append(testCase.get_volatility()[2])
-    print(betas)
-    print(values)
-    print(volatilities)
+    benchmarks = indexClass.index(period = 59, distance_metric = i, num_groups = 5, selection_metric = j, weight_metric = k)
+    benchmark_values = benchmarks.determine_value()[:2]
+    benchmark_volatilities = benchmarks.get_volatility()[:2]
+    benchmark_betas =  benchmarks.compute_beta()[:2]
+    return benchmark_betas, benchmark_values, benchmark_volatilities, betas, values, volatilities
+
+if __name__ == '__main__':
+    benchmark_betas, benchmark_values, benchmark_volatilities, betas, values, volatilities = first_period()
+    print("hello")
 
