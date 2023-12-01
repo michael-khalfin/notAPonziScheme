@@ -29,8 +29,9 @@ class index:
         - 0: Capitalization.
     """
 
-    def __init__(self, period = 59, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
+    def __init__(self, period = 59, lags = 60, distance_metric = 0, num_groups = 5, selection_metric = 0, weight_metric = 0):
         self.period = period
+        self.lags = lags
 
         self.capitalizations = pd.read_csv("data/capitalizations_all_periods.csv")
         self.largest_indices, self.largest_elems = self.get_k_largest(self.capitalizations[str(self.period)].to_numpy(), 30)
@@ -94,7 +95,13 @@ class index:
         Returns:
         - numpy.ndarray: The covariance matrix.
         """
-        covariance_matrix = pd.read_csv(f"data/covariance_matrices/60_periods/covariance_matrix_{self.period+1}_1.csv", header=None, encoding='utf-8')
+        if self.lags == 60:
+            covariance_matrix = pd.read_csv(f"data/covariance_matrices/60_periods/covariance_matrix_{self.period+1}_1.csv", header=None, encoding='utf-8')
+        elif self.lags == 30:
+            covariance_matrix = pd.read_csv(f"data/covariance_matrices/30_periods/covariance_matrix_{self.period+1}_30.csv", header=None, encoding='utf-8')
+        elif self.lags == 12:
+            covariance_matrix = pd.read_csv(f"data/covariance_matrices/12_periods/covariance_matrix_{self.period+1}_48.csv", header=None, encoding='utf-8')
+
         covariance_matrix = covariance_matrix.astype(float)
         covariance_matrix = covariance_matrix.to_numpy()
         covariance_matrix = covariance_matrix[self.largest_indices]
