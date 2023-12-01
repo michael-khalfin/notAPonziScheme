@@ -68,7 +68,7 @@ class index:
         - Tuple[numpy.ndarray, numpy.ndarray]: A tuple containing the indices and corresponding elements
         of the k largest values.
         """
-        largest_elems = sorted(capitalizations, reverse=False)[:k]
+        largest_elems = sorted(capitalizations, reverse=True)[:k]
         indices = []
         for elem in largest_elems:
             i = np.where(capitalizations == elem)
@@ -346,7 +346,7 @@ class index:
         for stock in self.stocks:
             index_value += self.index_weights[i] * self.next_performance[stock]
             i += 1
-        return uniform_value, weighted_value, index_value
+        return uniform_value.item(), weighted_value.item(), index_value.item()
 
     def compute_beta(self):
         """
@@ -380,5 +380,5 @@ class index:
         uniform_volatility =  np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights
         # Again, I'm not sure how we want to do this with the index
         index_volatility = np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights
-        return uniform_volatility, value_volatility, index_volatility
+        return uniform_volatility.item(), value_volatility.item(), index_volatility.item()
 
