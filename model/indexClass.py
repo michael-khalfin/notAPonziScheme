@@ -243,7 +243,7 @@ class index:
                 caps = []
                 caps = [self.largest_elems[i] for i in cluster]
                 caps = np.sort(caps)
-                i = np.where(self.largest_elems == caps[int(self.num_groups / 2)])
+                i = np.where(self.largest_elems == caps[int(len(caps) / 2)])
                 kstocks.append(i[0][0])
         return kstocks
     
@@ -375,7 +375,3 @@ class index:
         index_volatility = np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights
         return uniform_volatility, value_volatility, index_volatility
 
-
-
-
-x = index()
