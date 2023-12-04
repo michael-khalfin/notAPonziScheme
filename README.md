@@ -21,7 +21,9 @@
 
 ### <span style="color:blue">Inside the Repo </span>
 
-<span style="color:blue"> The first stages of the project entailed preprocessing raw data and estimating model inputs. Programs for accomplishing both tasks can be found in the *preprocessing* directory. <\span>
+<span style="color:blue"> The first stages of the project entailed preprocessing raw data and estimating model inputs. Programs for accomplishing both tasks can be found in the *preprocessing* directory. </span>
+
+
 
 
 
