@@ -23,6 +23,12 @@
 
 <span style="color:blue"> The first stages of the project entailed preprocessing raw data and estimating model inputs. Programs for accomplishing both tasks can be found in the *preprocessing* directory. </span>
 
+<span style="color:blue"> We re-estimated model inputs for each previously tested period (see report) and with different lags. All the estimated parameter files can be found in the *data* directory, along with the raw data and the capitalizations file. </span>
+
+<span style="color:blue"> The selection/clustering and allocation models can be found in the *model* directory. </span>
+
+<span style="color:blue"> Finally, key visualizations of recorded data can be found in the *images* directory. </span>
+
 
 
 
