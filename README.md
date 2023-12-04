@@ -21,5 +21,9 @@
 
 ### <span style="color:blue">Inside the Repo </span>
 
-### <span style="color:blue">Acknowledgements </span>
+<span style="color:blue"> The first stages of the project entailed preprocessing raw data and estimating model inputs. Programs for accomplishing both tasks can be found in the *preprocessing* directory. <\span>
+
+
+
+  ### <span style="color:blue">Acknowledgements </span>
 This was the final project for our CMOR 462: Optimization Methods in Finance course. We would like to thank our professor, Dr. Shiqian Ma, for his instruction and support. We had a lot of fun working on this project!
