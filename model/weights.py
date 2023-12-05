@@ -51,6 +51,7 @@ def variance_value_plot(benchmark_values, benchmark_volatilities, values, volati
     plt.clf()
     return closest_weighted, furthest_weighted, closest_uniform, furthest_uniform
 
+
 def find_closest_points(volatilities, values):
     """
     """
@@ -78,17 +79,89 @@ def find_closest_points(volatilities, values):
     return volatilities, values, weighted_closest[0], weighted_furthest[0], uniform_closest[0], uniform_furthest[0]
 
 
+def find_highest_sharpe_inputs(num_groups):
+    sharpes = [[] for i in range(11)]
+    for i in range(3):
+        for j in range(3): 
+            for k in range(2):
+                for h in range(11):
+                    testCase = indexClass.index(period = 59 + h, distance_metric = i, num_groups = num_groups, selection_metric = j, weight_metric = k)
+                    sharpes[h].append(testCase.get_sharpe()[2])
+                    # sharpes11.append(testCase11.get_sharpe()[2])
+                    # testCase12 = indexClass.index(period = 59, distance_metric = i, num_groups = 10, selection_metric = j, weight_metric = k)
+                    # sharpes12.append(testCase12.get_sharpe()[2])
+                    # testCase13 = indexClass.index(period = 59, distance_metric = i, num_groups = 15, selection_metric = j, weight_metric = k)
+                    # sharpes13.append(testCase13.get_sharpe()[2])
+                    # testCase21 = indexClass.index(period = 60, distance_metric = i, num_groups = 5, selection_metric = j, weight_metric = k)
+                    # sharpes21.append(testCase21.get_sharpe()[2])
+                    # testCase22 = indexClass.index(period = 60, distance_metric = i, num_groups = 10, selection_metric = j, weight_metric = k)
+                    # sharpes22.append(testCase22.get_sharpe()[2])
+                    # testCase23 = indexClass.index(period = 60, distance_metric = i, num_groups = 15, selection_metric = j, weight_metric = k)
+                    # sharpes23.append(testCase23.get_sharpe()[2])
+    max = float("-inf")
+    for sharpe in range(len(sharpes[0])):
+        total = 0
+        for period in sharpes:
+            total += (period[sharpe])
+        total /= 12
+        if total > max:
+            max = total
+            max_index = sharpe
+        # if (sharpes[sharpe] + sharpes21[sharpe]) / 2 > max5:
+        #     max5_index = sharpe
+        #     max5 = (sharpes11[sharpe] + sharpes21[sharpe]) / 2
+        # if (sharpes12[sharpe] + sharpes22[sharpe]) / 2 > max10:
+        #     max10_index = sharpe
+        #     max10 = (sharpes12[sharpe] + sharpes22[sharpe]) / 2
+        # if (sharpes13[sharpe] + sharpes23[sharpe]) / 2 > max15:
+        #     max15_index = sharpe
+        #     max15 = (sharpes13[sharpe] + sharpes23[sharpe]) / 2
+    return max_index, max
+
+def index_to_inputs(index):
+    distance_metric = math.floor(index / 6)
+    index = index % 6
+    selection_metric = math.floor(index / 3)
+    index = index % 3
+    weight_metric = index
+    return distance_metric, selection_metric, weight_metric
+
+def decide_inputs(index):
+    return index_to_inputs(index)
+
+
 
 if __name__ == '__main__':
-    inputs = []
-    benchmark_betas_1, benchmark_values_1, benchmark_volatilities_1, betas_1, values_1, volatilities_1 = first_period(5, 0)
-    inputs.append(variance_value_plot(benchmark_values_1, benchmark_volatilities_1, values_1, volatilities_1, "period1group5Normalized"))
-    benchmark_betas_2, benchmark_values_2, benchmark_volatilities_2, betas_2, values_2, volatilities_2 = first_period(10, 0)
-    inputs.append(variance_value_plot(benchmark_values_2, benchmark_volatilities_2, values_2, volatilities_2, "period1group10Normalized"))
-    benchmark_betas_3, benchmark_values_3, benchmark_volatilities_3, betas_3, values_3, volatilities_3 = first_period(15, 0)
-    inputs.append(variance_value_plot(benchmark_values_3, benchmark_volatilities_3, values_3, volatilities_3, "period1group15Normalized"))
-    print(inputs)
+    # inputs = []
+    # benchmark_betas_1, benchmark_values_1, benchmark_volatilities_1, betas_1, values_1, volatilities_1 = first_period(5, 0)
+    # inputs.append(variance_value_plot(benchmark_values_1, benchmark_volatilities_1, values_1, volatilities_1, "period1group5Normalized"))
+    # benchmark_betas_2, benchmark_values_2, benchmark_volatilities_2, betas_2, values_2, volatilities_2 = first_period(10, 0)
+    # inputs.append(variance_value_plot(benchmark_values_2, benchmark_volatilities_2, values_2, volatilities_2, "period1group10Normalized"))
+    # benchmark_betas_3, benchmark_values_3, benchmark_volatilities_3, betas_3, values_3, volatilities_3 = first_period(15, 0)
+    # inputs.append(variance_value_plot(benchmark_values_3, benchmark_volatilities_3, values_3, volatilities_3, "period1group15Normalized"))
+    # print(inputs)
     # [0, 0, 0]
     # [2, 0, 0]
     # [1, 0, 1] This one will be bad
+    # 
+    max_index_5, max_5 = find_highest_sharpe_inputs(5)
+    inputs_5 = decide_inputs(max_index_5)
+    max_index_10, max_10 = find_highest_sharpe_inputs(10)
+    inputs_10 = decide_inputs(max_index_10)
+    max_index_15, max_15 = find_highest_sharpe_inputs(15)
+    inputs_15 = decide_inputs(max_index_15)
+    print(max_5, inputs_5)
+    print(max_10, inputs_10)
+    print(max_15, inputs_15)
+    sharpes_value = 0
+    sharpes_uniform = 0
+    for h in range(11):
+        testCase = indexClass.index(period = 59 + h)
+        sharpes_uniform += testCase.get_sharpe()[0]
+        sharpes_value += testCase.get_sharpe()[1]
+    print(sharpes_uniform / 11)
+    print(sharpes_value / 11)
+    
+
+
 

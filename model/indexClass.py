@@ -48,6 +48,7 @@ class index:
 
         self.stocks = self.select_stocks(selection_metric = selection_metric)
         self.small_covariance = self.index_covariance()
+        self.small_returns = self.index_return()
         self.index_weights = self.compute_weights(weight_metric = weight_metric)
         self.value_weights = self.compute_benchmark_weights_value()
         self.uniform_weights = self.compute_benchmark_weights_uniform()
@@ -55,6 +56,7 @@ class index:
         self.uniform_beta, self.value_beta, self.index_beta = self.compute_beta()
         self.uniform_value, self.weighted_value, self.index_value = self.determine_value()
         self.uniform_volatility, self.weighted_volatility, self.index_volatility = self.get_volatility()
+        self.uniform_sharpe, self.weighted_sharpe, self.index_sharpe = self.get_sharpe()
 
     def get_k_largest(self, capitalizations, k):
         """
@@ -83,7 +85,7 @@ class index:
         Returns:
         - numpy.ndarray: The expected returns 
         """
-        expected_returns = pd.read_csv(f"data/expected_returns/expected_return_{self.period+1}.csv", header=None, encoding='utf-8')
+        expected_returns = pd.read_csv(f"data/expected_returns/60_periods/expected_return_{self.period+1}_1.csv", header=None, encoding='utf-8')
         expected_returns = expected_returns.astype(float)
         expected_returns = expected_returns.to_numpy()
         return expected_returns[self.largest_indices]
@@ -268,6 +270,18 @@ class index:
         covariance_matrix = covariance_matrix[:, self.stocks]
         return covariance_matrix
     
+    def index_return(self):
+        """
+        Method that removes the unselected stocks from the index's expected returns
+
+        Parameters:
+
+        Returns:
+        - numpy.ndarray: The expected return with k rows
+        """
+        expected_returns = self.expected_returns 
+        return expected_returns[self.stocks]
+    
     def compute_weights(self, weight_metric):
         """
         Calculates the portfolio weights of the representative stocks dependent on the portfolio we are tracking
@@ -381,4 +395,21 @@ class index:
         # Again, I'm not sure how we want to do this with the index
         index_volatility = np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights
         return uniform_volatility.item(), value_volatility.item(), index_volatility.item()
+
+    def get_sharpe(self):
+        """
+        Calculate the sharpe ratio of the benchmarks and the index
+
+        Parameters:
+
+        Returns:
+        A float representing the ratio between the expected returns and volatility of the corresponding portfolios
+        """
+        expected_return_uniform = np.transpose(self.expected_returns) @ self.uniform_weights
+        expected_return_value = np.transpose(self.expected_returns) @ self.value_weights
+        expected_return_index = np.transpose(self.small_returns) @ self.index_weights
+        std_uniform = math.sqrt(np.transpose(self.uniform_weights) @ self.covariance_matrix @ self.uniform_weights)
+        std_value = math.sqrt(np.transpose(self.value_weights) @ self.covariance_matrix @ self.value_weights)
+        std_index = math.sqrt(np.transpose(self.index_weights) @ self.small_covariance @ self.index_weights)
+        return expected_return_uniform / std_uniform, expected_return_value / std_value, expected_return_index / std_index
 
